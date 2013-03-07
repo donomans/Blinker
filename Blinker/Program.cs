@@ -23,7 +23,7 @@ namespace Blinker
                     s.WhenStopped(tc => tc.Stop());
                 });
                 x.RunAsLocalSystem();
-
+                x.StartAutomatically();
                 x.SetDescription("Directory watch blinker");
                 x.SetDisplayName("Blinker");
                 x.SetServiceName("Blinker");
@@ -43,6 +43,9 @@ namespace Blinker
             ///0) ensure blink1 is connected
             ///1) check if folder exists
             ok = blink1.open() & Directory.Exists(@"Z:\Unsorted\TV\Complete");
+            if(ok)
+                blink1.setRGB(0, 0, 0);
+            Console.WriteLine("status: " + ok);
         }
 
         public void Start()
@@ -59,7 +62,7 @@ namespace Blinker
                 DirectoryInfo newestdir = dirs
                     .OrderByDescending(di => di.LastWriteTime)
                     .FirstOrDefault();
-                if (newestdir.LastWriteTime > checkdate && newestdir.Attributes != FileAttributes.Hidden)
+                if (newestdir.LastWriteTime > checkdate && (newestdir.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
                 {
                     ///need to blink red for ~10 minutes and then glow dark red
                     for (int x = 0; x < 300; x++)
