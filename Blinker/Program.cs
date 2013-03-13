@@ -59,20 +59,29 @@ namespace Blinker
                     Directory.GetDirectories(@"Z:\Unsorted\TV\Complete").
                     Select(d => new DirectoryInfo(d)));
 
+                ///use this to determine color - from blue to green to yellow to orange to red based on how many folders are present
+                Int32 newfoldercount = dirs.Count(f => (f.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden);
+                Rgb colors = ColorPicker(newfoldercount, 15);
+
                 DirectoryInfo newestdir = dirs
                     .OrderByDescending(di => di.LastWriteTime)
                     .FirstOrDefault();
-                if (newestdir.LastWriteTime > checkdate && (newestdir.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
+                Console.WriteLine(newestdir.Name);
+                Console.WriteLine("newestdir datetime: " + newestdir.LastWriteTime.ToString());
+                Console.WriteLine("checkdate datetime: " + checkdate.ToString());
+                Console.WriteLine(newestdir.Attributes + " : " + ((newestdir.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden).ToString());
+                    
+                if (newestdir.LastWriteTime > checkdate && (newestdir.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden)
                 {
-                    ///need to blink red for ~10 minutes and then glow dark red
-                    for (int x = 0; x < 300; x++)
+                    ///need to blink red for ~10 minutes and then glow 
+                    for (int x = 0; x < 200; x++)
                     {
-                        blink1.fadeToRGB(1500, 255, 255, 0);
+                        blink1.fadeToRGB(1500, colors.Red, colors.Green, colors.Blue);
                         Thread.Sleep(1500);
-                        blink1.fadeToRGB(1500, 0, 0, 0);
+                        blink1.fadeToRGB(1500, colors.Red, colors.Green, colors.Blue);
                         Thread.Sleep(1500);
                     }
-                    blink1.setRGB(100, 100, 0);
+                    blink1.setRGB(colors.Red, colors.Green, colors.Blue);
                 }
                 else if (dirs.TrueForAll(p => (p.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden))
                 {
@@ -81,13 +90,46 @@ namespace Blinker
                 }
                 ///5) record current time over previous datetime
                 checkdate = DateTime.Now;
-                Thread.Sleep(60 * 10 * 1000);
+                Thread.Sleep(60 * 3 * 1000);
             }
         }
 
         public void Stop()
         {
             ok = false;
+        }
+
+        struct Rgb 
+        {
+            public short Red;
+            public short Green;
+            public short Blue;
+        }
+        private Rgb ColorPicker(Int32 CurrentCount, Int32 Threshold)
+        {
+            byte color = 0;
+            
+            Single div = (CurrentCount / Threshold);
+            div *= 5;
+
+            try{
+                color = checked((byte)((div / 5) * 255));
+            }
+            catch(OverflowException)
+            {
+                color = 255;
+            }
+            if (CurrentCount < 1)
+                return new Rgb { Red = 0, Green = 0, Blue = 0 };
+            else if (div > 1 && div < 1.999)
+                return new Rgb { Blue = 255, Green = color, Red = 0 };
+            else if (div > 2 && div < 2.999)
+                return new Rgb { Blue = color, Green = 255, Red = 0 };
+            else if (div > 3 && div < 3.999)
+                return new Rgb { Blue = 0, Green = 255, Red = color };
+            else 
+                return new Rgb { Blue = 0, Green = 0, Red = 255 };
+            
         }
     }
 }
