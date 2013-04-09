@@ -72,38 +72,44 @@ namespace Blinker
 
                 ///use this to determine color - from blue to green to yellow to orange to red based on how many folders are present
                 Int32 newfoldercount = dirs.Count(f => (f.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden);
-
-                DirectoryInfo newestdir = dirs
-                    .OrderByDescending(di => di.LastWriteTime)
-                    .FirstOrDefault();
-
-                Console.WriteLine(newestdir.Name);
-                Console.WriteLine("newestdir datetime: " + newestdir.LastWriteTime.ToString());
-                Console.WriteLine("checkdate datetime: " + checkdate.ToString());
-                Console.WriteLine("newfoldercount: " + newfoldercount.ToString());
-                Console.WriteLine("foldercount: " + foldercount.ToString());
-                Console.WriteLine(newestdir.Attributes + " : " + ((newestdir.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden).ToString());
-                    
-                if ((newestdir.LastWriteTime > checkdate || newfoldercount != foldercount) 
-                    && (newestdir.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden)
+                
+                if (newfoldercount > 0)
                 {
-                    Rgb colors = ColorPicker(newfoldercount, 15);//15 is an arbitrary value
+                    DirectoryInfo newestdir = dirs
+                        .OrderByDescending(di => di.LastWriteTime)
+                        .FirstOrDefault();
 
-                    ///need to blink a color for ~10 minutes and then glow 
-                    for (int x = 0; x < 200; x++)
+                    //Console.WriteLine(newestdir.Name);
+                    //Console.WriteLine("newestdir datetime: " + newestdir.LastWriteTime.ToString());
+                    //Console.WriteLine("checkdate datetime: " + checkdate.ToString());
+                    //Console.WriteLine("newfoldercount: " + newfoldercount.ToString());
+                    //Console.WriteLine("foldercount: " + foldercount.ToString());
+                    //Console.WriteLine(newestdir.Attributes + " : " + ((newestdir.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden).ToString());
+
+                    if ((newestdir.LastWriteTime > checkdate || newfoldercount >= foldercount)
+                        && (newestdir.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden)
                     {
-                        blink1.fadeToRGB(1500, colors.Red, colors.Green, colors.Blue);
-                        Thread.Sleep(1500);
-                        blink1.fadeToRGB(1500, 0, 0, 0);
-                        Thread.Sleep(1500);
+                        Rgb colors = ColorPicker(newfoldercount, 20);
+
+                        ///need to blink a color for ~5 minutes and then glow 
+                        for (int x = 0; x < 100; x++)
+                        {
+                            blink1.fadeToRGB(1500, colors.Red, colors.Green, colors.Blue);
+                            Thread.Sleep(1500);
+                            blink1.fadeToRGB(1500, 0, 0, 0);
+                            Thread.Sleep(1500);
+                        }
+                        blink1.setRGB(colors.Red, colors.Green, colors.Blue);
                     }
-                    blink1.setRGB(colors.Red, colors.Green, colors.Blue);
+                    else if (dirs.Count < 1 || dirs.TrueForAll(p => (p.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden))
+                    {
+                        ///if it's only the junk hidden folders then turn off the light
+                        blink1.setRGB(0, 0, 0);
+                    }
                 }
-                else if (dirs.TrueForAll(p => (p.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden))
-                {
-                    ///if it's only the junk hidden folders then turn off the light
+                else 
                     blink1.setRGB(0, 0, 0);
-                }
+
                 ///5) record current time over previous datetime
                 checkdate = DateTime.Now;
                 foldercount = newfoldercount;
