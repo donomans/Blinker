@@ -14,7 +14,7 @@ namespace Blinker
     {
         static void Main(string[] args)
         {
-            HostFactory.Run(x =>
+            var host = HostFactory.New(x =>
             {
                 x.Service<Blinky>(s =>
                 {
@@ -27,8 +27,8 @@ namespace Blinker
                 x.SetDescription("Directory watch blinker");
                 x.SetDisplayName("Blinker");
                 x.SetServiceName("Blinker");
-            });     
-                
+            });
+            host.Run();       
         }
     }
 
