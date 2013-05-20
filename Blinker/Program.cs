@@ -37,8 +37,8 @@ namespace Blinker
         ///2) set a datetime var as some super early date
         private DateTime checkdate = new DateTime();
         private Int32 foldercount = 0;
-        private Boolean ok = false;
         private Blink1 blink1 = new Blink1();
+        private static Thread t;
         public Blinky()
         {
             ///TODO:
@@ -53,26 +53,35 @@ namespace Blinker
 
             ///0) ensure blink1 is connected
             ///1) check if folder exists
-            ok = blink1.open() & Directory.Exists(@"Z:\Unsorted\TV\Complete");
-            if(ok)
+            var ok = blink1.open() & Directory.Exists(@"\\thebeast0\allofit\Unsorted\TV\Complete\");//@"Z:\Unsorted\TV\Complete");
+            if (ok)
                 blink1.setRGB(0, 0, 0);
-            Console.WriteLine("status: " + ok);
+            else
+                throw new Exception("Blink1 broken or folder doesn't exist.");
+                //Console.WriteLine("status: " + ok);
         }
 
         public void Start()
         {
-            while (ok)
+            Thread t = new Thread(new ThreadStart(DoBlinky));
+            t.Start();
+            //DoBlinky();
+        }
+
+        private void DoBlinky()
+        {
+            while (true)
             {
                 ///2) loop every 3 minutes
                 ///3) check for folders newer than recorded current time
                 ///4) enumerate folders to see if there are new folders and blink for 10 minute 
                 List<DirectoryInfo> dirs = new List<DirectoryInfo>(
-                    Directory.GetDirectories(@"Z:\Unsorted\TV\Complete").
+                    Directory.GetDirectories(@"\\thebeast0\allofit\Unsorted\TV\Complete\").//@"Z:\Unsorted\TV\Complete").
                     Select(d => new DirectoryInfo(d)));
 
                 ///use this to determine color - from blue to green to yellow to orange to red based on how many folders are present
                 Int32 newfoldercount = dirs.Count(f => (f.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden);
-                
+
                 if (newfoldercount > 0)
                 {
                     DirectoryInfo newestdir = dirs
@@ -107,7 +116,7 @@ namespace Blinker
                         blink1.setRGB(0, 0, 0);
                     }
                 }
-                else 
+                else
                     blink1.setRGB(0, 0, 0);
 
                 ///5) record current time over previous datetime
@@ -119,7 +128,8 @@ namespace Blinker
 
         public void Stop()
         {
-            ok = false;
+            if(t != null)
+                t.Join(500);
         }
 
         struct Rgb 
